@@ -83,6 +83,31 @@ export default function App() {
     }
   }
 
+  // Sign with the kit; if the kit lost its wallet session (e.g. state
+  // restored from localStorage but the wallet module is no longer connected),
+  // reopen the connect modal once and retry.
+  const signWithKit = useCallback(
+    async (xdr: string, addr: string): Promise<string> => {
+      try {
+        const { signedTxXdr } = await StellarWalletsKit.signTransaction(xdr, {
+          networkPassphrase: NETWORK_PASSPHRASE,
+          address: addr,
+        });
+        return signedTxXdr;
+      } catch (e) {
+        if (!/connect|select|no wallet|locked|session/i.test(errorMessage(e))) throw e;
+        const { address: fresh } = await StellarWalletsKit.authModal();
+        setAddress(fresh);
+        const { signedTxXdr } = await StellarWalletsKit.signTransaction(xdr, {
+          networkPassphrase: NETWORK_PASSPHRASE,
+          address: fresh,
+        });
+        return signedTxXdr;
+      }
+    },
+    [],
+  );
+
   async function send(destination: string, amount: string) {
     if (!address) return;
     setSending(true);
@@ -90,10 +115,7 @@ export default function App() {
     setSendError(null);
     try {
       const xdr = await buildPaymentXdr({ source: address, destination, amount });
-      const { signedTxXdr } = await StellarWalletsKit.signTransaction(xdr, {
-        networkPassphrase: NETWORK_PASSPHRASE,
-        address,
-      });
+      const signedTxXdr = await signWithKit(xdr, address);
       const { hash: txHash } = await submitSignedXdr(signedTxXdr);
       setHash(txHash);
       await refreshBalance(address);
@@ -141,20 +163,12 @@ export default function App() {
             busy={sending}
             hash={hash}
             error={sendError}
-            note="buildPaymentXdr → StellarWalletsKit.signTransaction (wallet pop-up) → submit to Horizon testnet."
           />
           <SwapCard
             address={address}
-            signXdr={async (xdr) =>
-              (
-                await StellarWalletsKit.signTransaction(xdr, {
-                  networkPassphrase: NETWORK_PASSPHRASE,
-                  address,
-                })
-              ).signedTxXdr
-            }
+            signXdr={(xdr) => signWithKit(xdr, address)}
             onSwapped={() => refreshBalance(address)}
-            note="The wallet extension pops up to approve the Soroban swap, exactly like the payment."
+            note="Use a Soroban-capable wallet (Freighter, xBull) — some wallets can't sign contract transactions yet."
           />
           <div className="row">
             <Button variant="ghost" onClick={() => void disconnect()}>

@@ -193,7 +193,6 @@ export function WalletDemo() {
             busy={sending}
             hash={txHash}
             error={sendError}
-            note="buildPaymentXdr → ParaStellarSigner.signTransactionXDR (MPC ed25519 co-signing) → Horizon submit."
           />
           <SwapCard
             address={address}

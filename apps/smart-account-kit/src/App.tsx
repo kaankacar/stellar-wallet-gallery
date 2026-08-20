@@ -235,11 +235,6 @@ export default function App() {
             busy={sending}
             hash={hash}
             error={error}
-            note={
-              CONFIG.relayerUrl
-                ? "Native XLM SAC transfer, authorized by the smart account and signed with your passkey. Fees are sponsored by the OpenZeppelin relayer — the wallet pays no fee."
-                : "Native XLM SAC transfer signed with your passkey, submitted via direct RPC (no relayer configured)."
-            }
           />
           <SwapCard address={session.contractId} />
           <div className="row">

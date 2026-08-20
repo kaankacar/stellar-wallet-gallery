@@ -191,7 +191,6 @@ export function WalletDemo() {
             busy={sending}
             hash={txHash}
             error={sendError}
-            note="buildPaymentXdr → Privy signRawHash (ed25519 over the tx hash) → tx.addSignature → Horizon submit."
           />
           <SwapCard
             address={address}

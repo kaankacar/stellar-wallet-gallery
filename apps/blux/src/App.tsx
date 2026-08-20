@@ -48,6 +48,8 @@ export function Root() {
         defaultNetwork: networks.testnet,
         explorer: "stellarexpert",
         isPersistent: true,
+        // Blux defaults to wallet-only; opt in to the non-crypto doors too.
+        loginMethods: ["wallet", "email", "sms", "google", "passkey"],
         appearance: { accentColor: ACCENT },
       }}
     >
@@ -156,7 +158,6 @@ function Wallet(props: { address: string }) {
         hash={hash}
         error={payError}
         disabled={balance === null}
-        note="XDR built by @gallery/shared, signed by Blux (signTransaction), submitted to Horizon via submitSignedXdr."
       />
       <SwapCard
         address={address}
