@@ -33,7 +33,7 @@ import {
  * Quarterly testnet resets wipe all of this; re-seed with
  * packages/shared/scripts/seed-pool-direct.mts.
  */
-const SOROSWAP_ROUTER = "CCJUD55AG6W5HAI5LRVNKAE5WDP5XGZBUDS5WNTIVDU7O264UZZE7BRD";
+export const SOROSWAP_ROUTER = "CCJUD55AG6W5HAI5LRVNKAE5WDP5XGZBUDS5WNTIVDU7O264UZZE7BRD";
 export const TESTNET_XLM = "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC";
 export const TESTNET_USDC = "CB3TLW74NBIOT3BUWOZ3TUM6RFDF6A4GVIRUQRQZABG5KPOUL4JJOV2F";
 
@@ -106,6 +106,10 @@ async function buildSwapXdr(source: string, stroopsIn: bigint, minOut: bigint): 
 export function SwapCard(props: {
   address: string;
   signXdr?: (xdr: string) => Promise<string>;
+  /** Contract-wallet apps: perform the whole swap (build → authorize with the
+   * wallet's signer → submit) given the quoted amounts. When provided, the
+   * card is interactive even for C-addresses. */
+  performSwap?: (stroopsIn: bigint, minOut: bigint) => Promise<{ hash: string }>;
   onSwapped?: () => void | Promise<void>;
   note?: string;
 }) {
@@ -119,24 +123,23 @@ export function SwapCard(props: {
   const [usdc, setUsdc] = useState<string | null>(null);
 
   const refreshUsdc = useCallback(async () => {
-    if (isContract) return;
     setUsdc(await getTokenBalance(TESTNET_USDC, address));
-  }, [address, isContract]);
+  }, [address]);
 
   useEffect(() => {
     void refreshUsdc();
   }, [refreshUsdc]);
 
-  if (isContract) {
+  if (isContract && !props.performSwap) {
     return (
       <Card title="Swap on Soroswap (testnet)">
         <p className="muted small">
           This wallet is a smart contract (a C-address), and every Stellar
           transaction needs a classic G account as its fee-paying source — so
-          this page's swap builder doesn't apply here. Try the swap on the four
-          G-account tabs. Contract wallets <em>can</em> swap too (the router
-          call gets authorized by a passkey-signed entry, exactly like the
-          transfer above), it's just beyond this demo's scope.
+          this page's swap builder doesn't apply here. This kit's high-level
+          SDK covers transfers; for a live smart-wallet swap see the Passkey
+          Kit tab, where the router call is authorized by a passkey-signed
+          entry and a throwaway fee source pays the fee.
         </p>
       </Card>
     );
@@ -160,15 +163,20 @@ export function SwapCard(props: {
   }
 
   async function swap() {
-    if (!quote || !props.signXdr) return;
+    if (!quote || (!props.signXdr && !props.performSwap)) return;
     setBusy("swap");
     setError(null);
     setHash(null);
     try {
       const minOut = (quote.out * 99n) / 100n; // 1% max slippage
-      const builtXdr = await buildSwapXdr(address, quote.in, minOut);
-      const signed = await props.signXdr(builtXdr);
-      const { hash: txHash } = await submitSignedXdr(signed);
+      let txHash: string;
+      if (props.performSwap) {
+        ({ hash: txHash } = await props.performSwap(quote.in, minOut));
+      } else {
+        const builtXdr = await buildSwapXdr(address, quote.in, minOut);
+        const signed = await props.signXdr!(builtXdr);
+        ({ hash: txHash } = await submitSignedXdr(signed));
+      }
       setHash(txHash);
       setQuote(null);
       await refreshUsdc();

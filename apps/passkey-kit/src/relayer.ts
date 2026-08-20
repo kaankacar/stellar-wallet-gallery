@@ -178,8 +178,15 @@ function getFeeSource(): Keypair {
  * friendbot XLM. Deploys still ride the sponsored Channels lane (their
  * credentials parse fine there).
  */
-async function submitDirectRpc(
-  invokeOp: Operation.InvokeHostFunction,
+/**
+ * Submit an already-authorized Soroban invoke directly via RPC, wrapped
+ * around the throwaway fee source: rebuild → prepareTransaction (keeps the
+ * pre-signed auth entries by design, fills footprint/resources) → sign the
+ * envelope → send → poll. Shared by V2-signed transfers AND passkey swaps.
+ */
+export async function submitInvoke(
+  func: import("@stellar/stellar-sdk").xdr.HostFunction,
+  auth: import("@stellar/stellar-sdk").xdr.SorobanAuthorizationEntry[],
 ): Promise<{ hash: string }> {
   const feeSource = getFeeSource();
   const server = new rpc.Server(RPC_URL);
@@ -194,9 +201,7 @@ async function submitDirectRpc(
     fee: (Number(BASE_FEE) * 100).toString(),
     networkPassphrase: NETWORK_PASSPHRASE,
   })
-    .addOperation(
-      Operation.invokeHostFunction({ func: invokeOp.func, auth: invokeOp.auth }),
-    )
+    .addOperation(Operation.invokeHostFunction({ func, auth }))
     .setTimeout(300)
     .build();
   const prepared = await server.prepareTransaction(tx);
@@ -213,6 +218,12 @@ async function submitDirectRpc(
     throw new Error(`Transaction ${sent.hash} ended with status ${final.status}`);
   }
   return { hash: sent.hash };
+}
+
+async function submitDirectRpc(
+  invokeOp: Operation.InvokeHostFunction,
+): Promise<{ hash: string }> {
+  return submitInvoke(invokeOp.func, invokeOp.auth ?? []);
 }
 
 /**

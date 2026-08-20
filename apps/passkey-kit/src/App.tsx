@@ -16,6 +16,7 @@ import {
 import { PasskeySigner, SignerKey, type StoredPasskey } from "passkey-kit";
 import { indexer, kit, nativeToken, storage } from "./config";
 import { submit } from "./relayer";
+import { swapWithPasskey } from "./swap";
 import { signingExplainer } from "./explainer-content";
 
 /** Parse a decimal-XLM input into i128 stroops for the SAC transfer. */
@@ -236,7 +237,14 @@ export default function App() {
             disabled={balance === null}
             note="A G… destination must already exist on testnet."
           />
-          <SwapCard address={address} />
+          <SwapCard
+            address={address}
+            performSwap={(stroopsIn, minOut) =>
+              swapWithPasskey(address, keyId, stroopsIn, minOut)
+            }
+            onSwapped={() => refreshBalance(address)}
+            note="Your passkey authorizes the router call (WebAuthn prompt); a throwaway fee source pays the fee, since the hosted OZ relayer can't parse the kit's P27 credentials yet."
+          />
           <div className="row">
             <Button variant="ghost" onClick={() => void forgetStored()}>
               Forget stored passkeys
