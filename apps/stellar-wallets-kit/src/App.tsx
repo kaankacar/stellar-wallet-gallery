@@ -9,6 +9,7 @@ import {
   PaymentCard,
   SigningExplainer,
   StatusNote,
+  SwapCard,
   buildPaymentXdr,
   errorMessage,
   getXlmBalance,
@@ -141,6 +142,19 @@ export default function App() {
             hash={hash}
             error={sendError}
             note="buildPaymentXdr → StellarWalletsKit.signTransaction (wallet pop-up) → submit to Horizon testnet."
+          />
+          <SwapCard
+            address={address}
+            signXdr={async (xdr) =>
+              (
+                await StellarWalletsKit.signTransaction(xdr, {
+                  networkPassphrase: NETWORK_PASSPHRASE,
+                  address,
+                })
+              ).signedTxXdr
+            }
+            onSwapped={() => refreshBalance(address)}
+            note="The wallet extension pops up to approve the Soroban swap, exactly like the payment."
           />
           <div className="row">
             <Button variant="ghost" onClick={() => void disconnect()}>

@@ -10,6 +10,7 @@ import {
   PaymentCard,
   SigningExplainer,
   StatusNote,
+  SwapCard,
   errorMessage,
   getXlmBalance,
 } from "@gallery/shared";
@@ -240,6 +241,7 @@ export default function App() {
                 : "Native XLM SAC transfer signed with your passkey, submitted via direct RPC (no relayer configured)."
             }
           />
+          <SwapCard address={session.contractId} />
           <div className="row">
             <Button variant="ghost" onClick={() => void disconnect()}>
               Disconnect

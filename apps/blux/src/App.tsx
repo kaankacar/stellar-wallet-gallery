@@ -10,6 +10,7 @@ import {
   PaymentCard,
   SigningExplainer,
   StatusNote,
+  SwapCard,
   NETWORK_PASSPHRASE,
   buildPaymentXdr,
   errorMessage,
@@ -156,6 +157,18 @@ function Wallet(props: { address: string }) {
         error={payError}
         disabled={balance === null}
         note="XDR built by @gallery/shared, signed by Blux (signTransaction), submitted to Horizon via submitSignedXdr."
+      />
+      <SwapCard
+        address={address}
+        signXdr={async (xdr) => {
+          const signed = await blux.signTransaction(xdr, { network: NETWORK_PASSPHRASE });
+          if (typeof signed !== "string") {
+            throw new Error(`Blux signTransaction returned an unexpected ${typeof signed}`);
+          }
+          return signed;
+        }}
+        onSwapped={() => void refresh()}
+        note="Blux routes the Soroban swap to whichever door you logged in through."
       />
       <div className="row">
         <Button variant="ghost" onClick={() => blux.logout()}>

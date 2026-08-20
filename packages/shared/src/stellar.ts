@@ -1,10 +1,13 @@
 import {
+  Address,
   Asset,
   BASE_FEE,
+  Contract,
   Horizon,
   Operation,
   TransactionBuilder,
   rpc,
+  scValToNative,
 } from "@stellar/stellar-sdk";
 
 export const NETWORK_PASSPHRASE = "Test SDF Network ; September 2015";
@@ -81,6 +84,41 @@ export async function submitSignedXdr(signedXdr: string): Promise<{ hash: string
   const tx = TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE);
   const res = await horizon.submitTransaction(tx);
   return { hash: res.hash };
+}
+
+/**
+ * Balance of a Soroban token (SEP-41 `balance(id)`) for any holder, read via
+ * RPC simulation — covers pure Soroban tokens that never appear in Horizon
+ * balances. Returns "0.0000000"-style strings; null when unreadable.
+ */
+export async function getTokenBalance(
+  tokenContract: string,
+  holder: string,
+): Promise<string | null> {
+  try {
+    const server = new rpc.Server(RPC_URL);
+    const source = holder.startsWith("G")
+      ? holder
+      : "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+    const account = await server.getAccount(source);
+    const tx = new TransactionBuilder(account, {
+      fee: BASE_FEE,
+      networkPassphrase: NETWORK_PASSPHRASE,
+    })
+      .addOperation(
+        new Contract(tokenContract).call("balance", Address.fromString(holder).toScVal()),
+      )
+      .setTimeout(60)
+      .build();
+    const sim = await server.simulateTransaction(tx);
+    if (rpc.Api.isSimulationSuccess(sim) && sim.result) {
+      const v = scValToNative(sim.result.retval) as bigint;
+      return (Number(v) / 1e7).toFixed(7);
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 /** Compact error message from Horizon/RPC/kit errors for UI display. */

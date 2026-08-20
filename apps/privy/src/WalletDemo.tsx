@@ -14,6 +14,7 @@ import {
   NETWORK_PASSPHRASE,
   PaymentCard,
   StatusNote,
+  SwapCard,
   buildPaymentXdr,
   errorMessage,
   getXlmBalance,
@@ -184,13 +185,31 @@ export function WalletDemo() {
       )}
 
       {address && (
-        <PaymentCard
-          onSend={(destination, amount) => void handleSend(destination, amount)}
-          busy={sending}
-          hash={txHash}
-          error={sendError}
-          note="buildPaymentXdr → Privy signRawHash (ed25519 over the tx hash) → tx.addSignature → Horizon submit."
-        />
+        <>
+          <PaymentCard
+            onSend={(destination, amount) => void handleSend(destination, amount)}
+            busy={sending}
+            hash={txHash}
+            error={sendError}
+            note="buildPaymentXdr → Privy signRawHash (ed25519 over the tx hash) → tx.addSignature → Horizon submit."
+          />
+          <SwapCard
+            address={address}
+            signXdr={async (xdr) => {
+              const tx = TransactionBuilder.fromXDR(xdr, NETWORK_PASSPHRASE);
+              const hashHex: `0x${string}` = `0x${tx.hash().toString("hex")}`;
+              const { signature } = await signRawHash({
+                address,
+                chainType: "stellar",
+                hash: hashHex,
+              });
+              tx.addSignature(address, hexToBase64(signature));
+              return tx.toXDR();
+            }}
+            onSwapped={() => void refreshBalance()}
+            note="Same raw-hash signing as the payment — Privy signs whatever 32 bytes the dApp derives, Soroban swaps included."
+          />
+        </>
       )}
     </>
   );

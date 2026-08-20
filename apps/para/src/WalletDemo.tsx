@@ -18,6 +18,7 @@ import {
   NETWORK_PASSPHRASE,
   PaymentCard,
   StatusNote,
+  SwapCard,
   buildPaymentXdr,
   errorMessage,
   getXlmBalance,
@@ -186,13 +187,24 @@ export function WalletDemo() {
       )}
 
       {address && (
-        <PaymentCard
-          onSend={(destination, amount) => void handleSend(destination, amount)}
-          busy={sending}
-          hash={txHash}
-          error={sendError}
-          note="buildPaymentXdr → ParaStellarSigner.signTransactionXDR (MPC ed25519 co-signing) → Horizon submit."
-        />
+        <>
+          <PaymentCard
+            onSend={(destination, amount) => void handleSend(destination, amount)}
+            busy={sending}
+            hash={txHash}
+            error={sendError}
+            note="buildPaymentXdr → ParaStellarSigner.signTransactionXDR (MPC ed25519 co-signing) → Horizon submit."
+          />
+          <SwapCard
+            address={address}
+            signXdr={async (xdr) => {
+              if (!stellarSigner) throw new Error("Para Stellar signer not ready");
+              return stellarSigner.signTransactionXDR(xdr, NETWORK_PASSPHRASE);
+            }}
+            onSwapped={() => void refreshBalance()}
+            note="The MPC ceremony co-signs the Soroban swap the same way it co-signs a payment."
+          />
+        </>
       )}
     </>
   );

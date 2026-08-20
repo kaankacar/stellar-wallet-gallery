@@ -9,6 +9,7 @@ import {
   PaymentCard,
   SigningExplainer,
   StatusNote,
+  SwapCard,
   errorMessage,
   getXlmBalance,
 } from "@gallery/shared";
@@ -234,6 +235,7 @@ export default function App() {
             disabled={balance === null}
             note="SACClient.transfer builds the native-XLM SAC call from the smart wallet → PasskeyKit.sign (WebAuthn prompt) → direct RPC submit via a throwaway friendbot-funded fee source (the hosted OZ Channels relayer can't parse the P27 V2 credentials the kit signs with yet). A G… destination must already exist on testnet."
           />
+          <SwapCard address={address} />
           <div className="row">
             <Button variant="ghost" onClick={disconnect}>
               Disconnect
