@@ -4,13 +4,13 @@ import {
   Button,
   Card,
   DemoShell,
+  FriendbotCard,
   NETWORK_PASSPHRASE,
   PaymentCard,
   SigningExplainer,
   StatusNote,
   buildPaymentXdr,
   errorMessage,
-  fundWithFriendbot,
   getXlmBalance,
   submitSignedXdr,
 } from "@gallery/shared";
@@ -22,7 +22,6 @@ export default function App() {
   const [balance, setBalance] = useState<string | null>(null);
   const [connectError, setConnectError] = useState<string | null>(null);
   const [accountError, setAccountError] = useState<string | null>(null);
-  const [funding, setFunding] = useState(false);
   const [sending, setSending] = useState(false);
   const [hash, setHash] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -83,20 +82,6 @@ export default function App() {
     }
   }
 
-  async function fund() {
-    if (!address) return;
-    setFunding(true);
-    setAccountError(null);
-    try {
-      await fundWithFriendbot(address);
-      await refreshBalance(address);
-    } catch (e) {
-      setAccountError(errorMessage(e));
-    } finally {
-      setFunding(false);
-    }
-  }
-
   async function send(destination: string, amount: string) {
     if (!address) return;
     setSending(true);
@@ -123,6 +108,7 @@ export default function App() {
       kit="Stellar Wallets Kit"
       tagline="Creit Tech's multi-wallet connect kit — one modal and one signing API for Freighter, xBull, Albedo, Ledger, Lobstr, HOT and more."
       accent="#4f8ff7"
+      accountKind="G"
     >
       {!address ? (
         <Card title="Connect">
@@ -145,11 +131,10 @@ export default function App() {
             address={address}
             balance={balance}
             onRefresh={() => void refreshBalance(address)}
-            onFund={() => void fund()}
-            funding={funding}
-            note="Friendbot funds a fresh testnet account with 10,000 XLM."
+            note="Your wallet's classic account — the extension holds the ed25519 key."
           />
           {accountError && <p className="error">{accountError}</p>}
+          <FriendbotCard address={address} onFunded={() => refreshBalance(address)} />
           <PaymentCard
             onSend={(destination, amount) => void send(destination, amount)}
             busy={sending}

@@ -10,12 +10,12 @@ import {
   AccountCard,
   Button,
   Card,
+  FriendbotCard,
   NETWORK_PASSPHRASE,
   PaymentCard,
   StatusNote,
   buildPaymentXdr,
   errorMessage,
-  fundWithFriendbot,
   getXlmBalance,
   submitSignedXdr,
 } from "@gallery/shared";
@@ -40,7 +40,6 @@ export function WalletDemo() {
   const [creating, setCreating] = useState(false);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [balance, setBalance] = useState<string | null>(null);
-  const [funding, setFunding] = useState(false);
   const [fundError, setFundError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -76,20 +75,6 @@ export function WalletDemo() {
   useEffect(() => {
     void refreshBalance();
   }, [refreshBalance]);
-
-  async function handleFund() {
-    if (!address) return;
-    setFunding(true);
-    setFundError(null);
-    try {
-      await fundWithFriendbot(address);
-      await refreshBalance();
-    } catch (e) {
-      setFundError(errorMessage(e));
-    } finally {
-      setFunding(false);
-    }
-  }
 
   async function handleSend(destination: string, amount: string) {
     if (!address) return;
@@ -161,17 +146,18 @@ export function WalletDemo() {
       </Card>
 
       {address ? (
-        <AccountCard
-          address={address}
-          balance={balance}
-          onRefresh={() => void refreshBalance()}
-          onFund={() => void handleFund()}
-          funding={funding}
-          note={
-            fundError ??
-            "Embedded Stellar wallet — a Privy 'extended chain' (tier 2) ed25519 key that derives a native G-address."
-          }
-        />
+        <>
+          <AccountCard
+            address={address}
+            balance={balance}
+            onRefresh={() => void refreshBalance()}
+            note={
+              fundError ??
+              "Embedded Stellar wallet — a Privy 'extended chain' (tier 2) ed25519 key that derives a native G-address."
+            }
+          />
+          <FriendbotCard address={address} onFunded={() => void refreshBalance()} />
+        </>
       ) : (
         <Card title="Account">
           {creating ? (

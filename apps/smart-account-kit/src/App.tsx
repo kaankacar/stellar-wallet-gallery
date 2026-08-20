@@ -5,12 +5,12 @@ import {
   Card,
   DemoShell,
   Field,
+  FriendbotCard,
   NeedsKeyBanner,
   PaymentCard,
   SigningExplainer,
   StatusNote,
   errorMessage,
-  fundWithFriendbot,
   getXlmBalance,
 } from "@gallery/shared";
 import { LocalStorageAdapter, SmartAccountKit } from "smart-account-kit";
@@ -50,7 +50,6 @@ export default function App() {
   const [balance, setBalance] = useState<string | null>(null);
   const [userName, setUserName] = useState("gallery-user");
   const [connecting, setConnecting] = useState<null | "create" | "connect">(null);
-  const [funding, setFunding] = useState(false);
   const [sending, setSending] = useState(false);
   const [hash, setHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -151,20 +150,6 @@ export default function App() {
     setError(null);
   }, [kit]);
 
-  const fund = useCallback(async () => {
-    if (!session) return;
-    setFunding(true);
-    try {
-      // Testnet friendbot funds C-addresses directly.
-      await fundWithFriendbot(session.contractId);
-      await refreshBalance(session.contractId);
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setFunding(false);
-    }
-  }, [session, refreshBalance]);
-
   const send = useCallback(
     async (destination: string, amount: string) => {
       if (!kit || !session) return;
@@ -196,7 +181,7 @@ export default function App() {
   );
 
   return (
-    <DemoShell kit="Smart Account Kit" tagline={TAGLINE} accent={ACCENT}>
+    <DemoShell kit="Smart Account Kit" tagline={TAGLINE} accent={ACCENT} accountKind="C">
       {MISSING_VARS.length > 0 && (
         <NeedsKeyBanner kit="Smart Account Kit" vars={MISSING_VARS} docsUrl={DOCS_URL} />
       )}
@@ -238,9 +223,11 @@ export default function App() {
             address={session.contractId}
             balance={balance}
             onRefresh={() => void refreshBalance(session.contractId)}
-            onFund={() => void fund()}
-            funding={funding}
-            note="Contract wallet (C-address) controlled by your passkey."
+            note="OpenZeppelin smart account controlled by your passkey — policies and extra signers can be added on-chain."
+          />
+          <FriendbotCard
+            address={session.contractId}
+            onFunded={() => refreshBalance(session.contractId)}
           />
           <PaymentCard
             onSend={(destination, amount) => void send(destination, amount)}

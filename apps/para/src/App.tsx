@@ -28,6 +28,7 @@ export function App() {
       kit="Para"
       tagline="MPC embedded-wallet infrastructure — users log in with email or social, key shares live in Para's distributed MPC network (no seed phrases), and Stellar support launched Aug 5, 2026."
       accent="#ff7b54"
+      accountKind="G"
     >
       {API_KEY ? (
         <QueryClientProvider client={queryClient}>

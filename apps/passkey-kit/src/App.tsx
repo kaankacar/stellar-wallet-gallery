@@ -5,11 +5,11 @@ import {
   Card,
   DemoShell,
   Field,
+  FriendbotCard,
   PaymentCard,
   SigningExplainer,
   StatusNote,
   errorMessage,
-  fundWithFriendbot,
   getXlmBalance,
 } from "@gallery/shared";
 import { PasskeySigner, SignerKey, type StoredPasskey } from "passkey-kit";
@@ -35,7 +35,6 @@ export default function App() {
   const [connectError, setConnectError] = useState<string | null>(null);
   const [balance, setBalance] = useState<string | null>(null);
   const [accountError, setAccountError] = useState<string | null>(null);
-  const [funding, setFunding] = useState(false);
   const [sending, setSending] = useState(false);
   const [hash, setHash] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -138,20 +137,6 @@ export default function App() {
     disconnect();
   }
 
-  async function fund() {
-    if (!address) return;
-    setFunding(true);
-    setAccountError(null);
-    try {
-      await fundWithFriendbot(address); // friendbot funds C-addresses on testnet
-      await refreshBalance(address);
-    } catch (e) {
-      setAccountError(errorMessage(e));
-    } finally {
-      setFunding(false);
-    }
-  }
-
   async function send(destination: string, amount: string) {
     if (!address) return;
     setSending(true);
@@ -188,6 +173,7 @@ export default function App() {
       kit="Passkey Kit"
       tagline="Smart-wallet SDK where a WebAuthn passkey controls a Soroban contract wallet — now stewarded in the stellar GitHub org."
       accent="#29d3a2"
+      accountKind="C"
     >
       {!address ? (
         <Card title="Connect">
@@ -236,11 +222,10 @@ export default function App() {
             address={address}
             balance={balance}
             onRefresh={() => void refreshBalance(address)}
-            onFund={() => void fund()}
-            funding={funding}
-            note="Contract wallet (C-address) controlled by your passkey. Friendbot funds C-addresses on testnet with 10,000 XLM."
+            note="Contract wallet controlled by your passkey — the balance lives in the native asset contract, not a classic account."
           />
           {accountError && <p className="error">{accountError}</p>}
+          <FriendbotCard address={address} onFunded={() => refreshBalance(address)} />
           <PaymentCard
             onSend={(destination, amount) => void send(destination, amount)}
             busy={sending}

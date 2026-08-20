@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   DemoShell,
+  FriendbotCard,
   NeedsKeyBanner,
   PaymentCard,
   SigningExplainer,
@@ -12,7 +13,6 @@ import {
   NETWORK_PASSPHRASE,
   buildPaymentXdr,
   errorMessage,
-  fundWithFriendbot,
   getXlmBalance,
   submitSignedXdr,
 } from "@gallery/shared";
@@ -28,7 +28,7 @@ const APP_ID = (import.meta.env.VITE_BLUX_APP_ID as string | undefined)?.trim();
 export function Root() {
   if (!APP_ID) {
     return (
-      <DemoShell kit="Blux" tagline={TAGLINE} accent={ACCENT}>
+      <DemoShell kit="Blux" tagline={TAGLINE} accent={ACCENT} accountKind="G">
         <NeedsKeyBanner kit="Blux" vars={["VITE_BLUX_APP_ID"]} docsUrl={DASHBOARD_URL} />
         <StatusNote>
           Blux validates the app id against its API before allowing login or signing, so the
@@ -50,7 +50,7 @@ export function Root() {
         appearance: { accentColor: ACCENT },
       }}
     >
-      <DemoShell kit="Blux" tagline={TAGLINE} accent={ACCENT}>
+      <DemoShell kit="Blux" tagline={TAGLINE} accent={ACCENT} accountKind="G">
         <Flow />
         <SigningExplainer {...signingExplainer} />
       </DemoShell>
@@ -103,7 +103,6 @@ function Wallet(props: { address: string }) {
   const blux = useBlux();
 
   const [balance, setBalance] = useState<string | null>(null);
-  const [funding, setFunding] = useState(false);
   const [fundError, setFundError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [hash, setHash] = useState<string | null>(null);
@@ -120,19 +119,6 @@ function Wallet(props: { address: string }) {
   useEffect(() => {
     void refresh();
   }, [refresh]);
-
-  const fund = async () => {
-    setFunding(true);
-    setFundError(null);
-    try {
-      await fundWithFriendbot(address);
-      await refresh();
-    } catch (e) {
-      setFundError(errorMessage(e));
-    } finally {
-      setFunding(false);
-    }
-  };
 
   const send = async (destination: string, amount: string) => {
     setBusy(true);
@@ -160,10 +146,9 @@ function Wallet(props: { address: string }) {
         address={address}
         balance={balance}
         onRefresh={() => void refresh()}
-        onFund={() => void fund()}
-        funding={funding}
-        note={fundError ? `Friendbot: ${fundError}` : undefined}
+        note={fundError ? `Balance: ${fundError}` : "Classic account behind whichever door you logged in through."}
       />
+      <FriendbotCard address={address} onFunded={() => void refresh()} />
       <PaymentCard
         onSend={(destination, amount) => void send(destination, amount)}
         busy={busy}

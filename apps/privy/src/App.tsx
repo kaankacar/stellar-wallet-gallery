@@ -12,6 +12,7 @@ export function App() {
       kit="Privy"
       tagline="Embedded-wallet infrastructure powering 120M+ accounts — users log in with email or social and Privy manages the keys for them."
       accent="#6c5ce7"
+      accountKind="G"
     >
       {APP_ID ? (
         <PrivyProvider

@@ -1,5 +1,21 @@
 import { type CSSProperties, type ReactNode, useState } from "react";
-import { explorerAccountUrl, explorerTxUrl } from "./stellar";
+import { errorMessage, explorerAccountUrl, explorerTxUrl, fundWithFriendbot } from "./stellar";
+
+/**
+ * Pill naming the account model. `kind` is the address prefix: G = classic
+ * Stellar account (ed25519 keypair), C = Soroban smart-contract wallet.
+ */
+export function AccountKindBadge(props: { kind: "G" | "C"; long?: boolean }) {
+  const c = props.kind === "C";
+  const text = props.long
+    ? c
+      ? "Creates a C account — a Soroban smart-contract wallet"
+      : "Creates a G account — a classic Stellar account"
+    : c
+      ? "C · contract wallet"
+      : "G · classic account";
+  return <span className={`kind-pill kind-${props.kind}`}>{text}</span>;
+}
 
 /** The gallery roster: local dev port + deployed sibling path per app. */
 const GALLERY_APPS = [
@@ -42,6 +58,7 @@ export function DemoShell(props: {
   kit: string;
   tagline: string;
   accent?: string;
+  accountKind?: "G" | "C";
   children: ReactNode;
   footer?: ReactNode;
 }) {
@@ -53,6 +70,7 @@ export function DemoShell(props: {
         <div className="eyebrow">Stellar Wallet Gallery · Testnet</div>
         <h1>{props.kit}</h1>
         <p className="tagline">{props.tagline}</p>
+        {props.accountKind && <AccountKindBadge kind={props.accountKind} long />}
       </header>
       <main className="shell-main">{props.children}</main>
       <footer className="shell-footer">
@@ -144,6 +162,7 @@ export function AccountCard(props: {
     <Card title="Account">
       <div className="row">
         <AddressChip address={props.address} />
+        <AccountKindBadge kind={props.address.startsWith("C") ? "C" : "G"} />
       </div>
       <p className="balance">
         {props.balance === null ? (
@@ -207,6 +226,51 @@ export function PaymentCard(props: {
       )}
       {props.error && <p className="error">{props.error}</p>}
       {props.note && <p className="muted small">{props.note}</p>}
+    </Card>
+  );
+}
+
+/**
+ * Dedicated friendbot funding section, shown once a wallet is connected.
+ * Self-contained: does the friendbot call itself and reports success/failure;
+ * `onFunded` lets the host app refresh its balance display.
+ */
+export function FriendbotCard(props: { address: string; onFunded?: () => void | Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const isC = props.address.startsWith("C");
+
+  async function fund() {
+    setBusy(true);
+    setError(null);
+    setDone(false);
+    try {
+      await fundWithFriendbot(props.address);
+      setDone(true);
+      await props.onFunded?.();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card title="Fund with friendbot">
+      <p className="muted small">
+        Friendbot is the testnet faucet — free XLM for testing, one HTTP call.{" "}
+        {isC
+          ? "It funds C-addresses directly: 10,000 test XLM land in the contract wallet's native-asset balance."
+          : "A classic G account doesn't exist on-chain until it's funded; friendbot creates it with 10,000 test XLM."}
+      </p>
+      <div className="row">
+        <Button onClick={() => void fund()} disabled={busy}>
+          {busy ? "Funding…" : "🤖 Fund this wallet"}
+        </Button>
+        {done && <span className="success">Funded — balance updated.</span>}
+      </div>
+      {error && <p className="error">{error}</p>}
     </Card>
   );
 }
