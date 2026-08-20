@@ -50,6 +50,26 @@ throwaway friendbot-funded fee source instead — still zero credentials.
 - **SWK / Blux / Privy / Para**: verified to build and render; their live
   signing ceremonies need a real wallet extension or a dashboard credential,
   so dry-run those in a browser before demo day.
+- **Soroswap swap path** (2026-08-20): the XLM/USDC pool was seeded on-chain
+  (5,000 XLM + 2,000 USDC via direct `add_liquidity`,
+  [tx `c09a9704…`](https://stellar.expert/explorer/testnet/tx/c09a9704a63d065a33e8accc8799e643569d4e202da7cde2b5a6e60744d6502f)),
+  and the exact quote → build → sign → submit path the swap card uses was
+  proven with a real swap
+  ([tx `98a86e10…`](https://stellar.expert/explorer/testnet/tx/98a86e1046249cbbe805ec22c4fb9e08f74a89e423450b8cd6c246cc6fe28111)),
+  via `packages/shared/scripts/verify-swap-direct.mts`.
+
+## Swapping (Soroswap)
+
+Every G-account app has a **Swap on Soroswap (testnet)** card after login:
+XLM → USDC against the Soroswap AMM router, fully client-side — quote by
+simulating `router_get_amounts_out`, build `swap_exact_tokens_for_tokens`,
+sign with that page's wallet kit, submit. **No API key needed.** The two
+contract-wallet apps explain why a C-address can't be the classic tx source.
+
+Testnet resets wipe the pool; re-seed it with
+`SOROSWAP_API_KEY=sk_… pnpm dlx tsx scripts/seed-pool-direct.mts` from
+`packages/shared` (the key — free at api.soroswap.finance/register — is only
+needed for the USDC faucet in that script, not by the app).
 
 ## Run it
 

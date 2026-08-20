@@ -1,74 +1,101 @@
 import { useCallback, useEffect, useState } from "react";
+import {
+  Address,
+  BASE_FEE,
+  Contract,
+  TransactionBuilder,
+  nativeToScVal,
+  rpc,
+  scValToNative,
+  xdr,
+} from "@stellar/stellar-sdk";
 import { Button, Card, Field } from "./ui";
 import {
+  NETWORK_PASSPHRASE,
+  RPC_URL,
   errorMessage,
   explorerTxUrl,
   getTokenBalance,
   submitSignedXdr,
 } from "./stellar";
 
-const SOROSWAP_API = "https://api.soroswap.finance";
-const API_KEY = ((import.meta as any).env?.VITE_SOROSWAP_API_KEY as string | undefined)?.trim();
-
 /**
- * Soroswap testnet token contracts (from the public api.soroswap.finance
- * /api/tokens list, 2026-08-20). Testnet USDC is a PURE Soroban token
+ * Soroswap TESTNET contracts. Router/factory from the public registry
+ * (api.soroswap.finance/api/testnet/router); token contracts from the public
+ * /api/tokens list (2026-08-20). Testnet USDC is a PURE Soroban token
  * (name() = "USDCoin", verified via RPC) — not a classic-asset SAC — so
- * G-accounts receive it without a trustline; balances live in the contract.
- * Note: quarterly testnet resets change these; refresh from /api/tokens.
+ * G-accounts receive it without a trustline. The XLM/USDC pair was seeded
+ * with liquidity for this gallery (5,000 XLM + 2,000 USDC, 2026-08-20).
+ * Quarterly testnet resets wipe all of this; re-seed with
+ * packages/shared/scripts/seed-pool-direct.mts.
  */
+const SOROSWAP_ROUTER = "CCJUD55AG6W5HAI5LRVNKAE5WDP5XGZBUDS5WNTIVDU7O264UZZE7BRD";
 export const TESTNET_XLM = "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC";
 export const TESTNET_USDC = "CB3TLW74NBIOT3BUWOZ3TUM6RFDF6A4GVIRUQRQZABG5KPOUL4JJOV2F";
 
-async function soroswapPost(path: string, body: unknown): Promise<any> {
-  const res = await fetch(`${SOROSWAP_API}${path}?network=testnet`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`,
-    },
-    body: JSON.stringify(body),
-  });
-  const text = await res.text();
-  let data: any = null;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    /* non-JSON error body */
+const pathScVal = () =>
+  xdr.ScVal.scvVec([
+    Address.fromString(TESTNET_XLM).toScVal(),
+    Address.fromString(TESTNET_USDC).toScVal(),
+  ]);
+
+/** Read-only quote via simulation of router_get_amounts_out (keyless). */
+async function quoteAmountOut(source: string, stroopsIn: bigint): Promise<bigint> {
+  const server = new rpc.Server(RPC_URL);
+  const account = await server.getAccount(source);
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      new Contract(SOROSWAP_ROUTER).call(
+        "router_get_amounts_out",
+        nativeToScVal(stroopsIn, { type: "i128" }),
+        pathScVal(),
+      ),
+    )
+    .setTimeout(60)
+    .build();
+  const sim = await server.simulateTransaction(tx);
+  if (!rpc.Api.isSimulationSuccess(sim) || !sim.result) {
+    const err = (sim as any)?.error ?? "no route (pool missing or unfunded?)";
+    throw new Error(`Quote simulation failed: ${String(err).slice(0, 160)}`);
   }
-  if (!res.ok) {
-    throw new Error(
-      typeof data?.message === "string"
-        ? `Soroswap API: ${data.message}`
-        : `Soroswap API ${res.status}: ${text.slice(0, 180)}`,
-    );
-  }
-  return data;
+  const amounts = scValToNative(sim.result.retval) as bigint[];
+  return amounts[amounts.length - 1];
 }
 
-/** Fish the output amount (stroops) out of the quote defensively. */
-function quoteAmountOut(q: any): string | null {
-  const candidates = [
-    q?.amountOut,
-    q?.expectedAmountOut,
-    q?.trade?.expectedAmountOut,
-    q?.trade?.amountOut,
-    q?.trade?.amountOutMin,
-    q?.minAmountOut,
-  ];
-  for (const c of candidates) {
-    if (c !== undefined && c !== null && !Number.isNaN(Number(c))) {
-      return (Number(c) / 1e7).toFixed(4);
-    }
-  }
-  return null;
+/** Build a ready-to-sign swap_exact_tokens_for_tokens transaction XDR. */
+async function buildSwapXdr(source: string, stroopsIn: bigint, minOut: bigint): Promise<string> {
+  const server = new rpc.Server(RPC_URL);
+  const account = await server.getAccount(source);
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
+  const tx = new TransactionBuilder(account, {
+    fee: (Number(BASE_FEE) * 10000).toString(),
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      new Contract(SOROSWAP_ROUTER).call(
+        "swap_exact_tokens_for_tokens",
+        nativeToScVal(stroopsIn, { type: "i128" }),
+        nativeToScVal(minOut, { type: "i128" }),
+        pathScVal(),
+        Address.fromString(source).toScVal(),
+        nativeToScVal(deadline, { type: "u64" }),
+      ),
+    )
+    .setTimeout(300)
+    .build();
+  const prepared = await server.prepareTransaction(tx);
+  return prepared.toXDR();
 }
 
 /**
- * XLM → USDC swap through the Soroswap aggregator API (testnet): quote →
- * build XDR → sign with the host app's kit (`signXdr`) → submit via Horizon.
- * Contract-wallet (C-address) apps get an explanatory state instead — the
- * API builds classic-source transactions.
+ * XLM → USDC swap against the Soroswap AMM router on testnet, fully
+ * client-side: quote by simulating router_get_amounts_out, build
+ * swap_exact_tokens_for_tokens, sign with the host app's kit (`signXdr`),
+ * submit via Horizon. No API key needed. Contract-wallet (C-address) apps
+ * get an explanatory state instead — the tx source must be a classic account.
  */
 export function SwapCard(props: {
   address: string;
@@ -79,7 +106,7 @@ export function SwapCard(props: {
   const { address } = props;
   const isContract = address.startsWith("C");
   const [amount, setAmount] = useState("10");
-  const [quote, setQuote] = useState<any | null>(null);
+  const [quote, setQuote] = useState<{ in: bigint; out: bigint } | null>(null);
   const [busy, setBusy] = useState<null | "quote" | "swap">(null);
   const [hash, setHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -98,28 +125,12 @@ export function SwapCard(props: {
     return (
       <Card title="Swap on Soroswap (testnet)">
         <p className="muted small">
-          The Soroswap API builds classic-source transactions, so this contract
-          wallet can't ride the same path: a smart-wallet swap means assembling
-          the router invocation yourself and signing its auth entry with the
-          passkey — the same machinery as the transfer above, one level deeper.
-          Try the swap on the four G-account tabs to compare how each signer
-          handles the exact same Soroban transaction.
-        </p>
-      </Card>
-    );
-  }
-
-  if (!API_KEY) {
-    return (
-      <Card title="Swap on Soroswap (testnet)">
-        <p className="muted small">
-          Needs a free Soroswap API key: register at{" "}
-          <a href="https://api.soroswap.finance/register" target="_blank" rel="noreferrer">
-            api.soroswap.finance/register
-          </a>
-          , generate a key on the login page, and set{" "}
-          <code>VITE_SOROSWAP_API_KEY</code> in this app's <code>.env</code>{" "}
-          (and the repo's Actions secrets for the deployed site).
+          The swap card builds a classic-source router transaction, so this
+          contract wallet can't ride the same path: a smart-wallet swap means
+          authorizing the router invocation with a passkey-signed auth entry —
+          the same machinery as the transfer above, one level deeper. Try the
+          swap on the four G-account tabs to compare how each signer handles
+          the exact same Soroban transaction.
         </p>
       </Card>
     );
@@ -131,19 +142,10 @@ export function SwapCard(props: {
     setHash(null);
     setQuote(null);
     try {
-      const stroops = Math.round(Number(amount) * 1e7);
-      if (!Number.isFinite(stroops) || stroops <= 0) {
-        throw new Error("Enter a positive XLM amount");
-      }
-      const q = await soroswapPost("/quote", {
-        assetIn: TESTNET_XLM,
-        assetOut: TESTNET_USDC,
-        amount: stroops,
-        tradeType: "EXACT_IN",
-        protocols: ["soroswap"],
-        slippageBps: 100,
-      });
-      setQuote(q);
+      const stroops = BigInt(Math.round(Number(amount) * 1e7));
+      if (stroops <= 0n) throw new Error("Enter a positive XLM amount");
+      const out = await quoteAmountOut(address, stroops);
+      setQuote({ in: stroops, out });
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -157,15 +159,9 @@ export function SwapCard(props: {
     setError(null);
     setHash(null);
     try {
-      const built = await soroswapPost("/quote/build", {
-        quote,
-        from: address,
-        to: address,
-      });
-      if (typeof built?.xdr !== "string") {
-        throw new Error("Soroswap build returned no XDR");
-      }
-      const signed = await props.signXdr(built.xdr);
+      const minOut = (quote.out * 99n) / 100n; // 1% max slippage
+      const builtXdr = await buildSwapXdr(address, quote.in, minOut);
+      const signed = await props.signXdr(builtXdr);
       const { hash: txHash } = await submitSignedXdr(signed);
       setHash(txHash);
       setQuote(null);
@@ -178,13 +174,12 @@ export function SwapCard(props: {
     }
   }
 
-  const out = quote ? quoteAmountOut(quote) : null;
-
   return (
     <Card title="Swap on Soroswap (testnet)">
       <p className="muted small">
-        XLM → USDC through Soroswap's aggregator API: quote → build XDR →{" "}
-        <strong>sign with this kit</strong> → submit.
+        XLM → USDC against the Soroswap AMM router: quote via simulation →
+        build the swap invocation → <strong>sign with this kit</strong> →
+        submit.
         {props.note ? ` ${props.note}` : ""}
       </p>
       <Field
@@ -210,8 +205,8 @@ export function SwapCard(props: {
       </div>
       {quote && (
         <p className="muted small">
-          Quote: {amount} XLM → {out ? `≈ ${out} USDC` : "USDC"} · Soroswap AMM ·
-          1% max slippage
+          Quote: {amount} XLM → ≈ {(Number(quote.out) / 1e7).toFixed(4)} USDC ·
+          Soroswap AMM · 1% max slippage
         </p>
       )}
       <p className="muted small">USDC balance: {usdc ?? "0"}</p>
