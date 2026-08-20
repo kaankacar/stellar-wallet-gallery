@@ -15,6 +15,7 @@ import {
   RPC_URL,
   errorMessage,
   explorerTxUrl,
+  getSimulationAccount,
   getTokenBalance,
   submitSignedXdr,
 } from "./stellar";
@@ -42,10 +43,12 @@ const pathScVal = () =>
     Address.fromString(TESTNET_USDC).toScVal(),
   ]);
 
-/** Read-only quote via simulation of router_get_amounts_out (keyless). */
+/** Read-only quote via simulation of router_get_amounts_out (keyless). Works
+ * even before the user's own account is funded — simulation falls back to a
+ * shared throwaway source. */
 async function quoteAmountOut(source: string, stroopsIn: bigint): Promise<bigint> {
   const server = new rpc.Server(RPC_URL);
-  const account = await server.getAccount(source);
+  const account = await getSimulationAccount(server, source);
   const tx = new TransactionBuilder(account, {
     fee: BASE_FEE,
     networkPassphrase: NETWORK_PASSPHRASE,
@@ -128,12 +131,12 @@ export function SwapCard(props: {
     return (
       <Card title="Swap on Soroswap (testnet)">
         <p className="muted small">
-          The swap card builds a classic-source router transaction, so this
-          contract wallet can't ride the same path: a smart-wallet swap means
-          authorizing the router invocation with a passkey-signed auth entry —
-          the same machinery as the transfer above, one level deeper. Try the
-          swap on the four G-account tabs to compare how each signer handles
-          the exact same Soroban transaction.
+          This wallet is a smart contract (a C-address), and every Stellar
+          transaction needs a classic G account as its fee-paying source — so
+          this page's swap builder doesn't apply here. Try the swap on the four
+          G-account tabs. Contract wallets <em>can</em> swap too (the router
+          call gets authorized by a passkey-signed entry, exactly like the
+          transfer above), it's just beyond this demo's scope.
         </p>
       </Card>
     );
@@ -171,7 +174,12 @@ export function SwapCard(props: {
       await refreshUsdc();
       await props.onSwapped?.();
     } catch (e) {
-      setError(errorMessage(e));
+      const msg = errorMessage(e);
+      setError(
+        /account not found/i.test(msg)
+          ? "This wallet isn't on-chain yet — fund it with friendbot (card above), then swap."
+          : msg,
+      );
     } finally {
       setBusy(null);
     }

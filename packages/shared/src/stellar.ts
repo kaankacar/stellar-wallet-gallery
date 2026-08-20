@@ -4,6 +4,7 @@ import {
   BASE_FEE,
   Contract,
   Horizon,
+  Keypair,
   Operation,
   TransactionBuilder,
   rpc,
@@ -86,6 +87,36 @@ export async function submitSignedXdr(signedXdr: string): Promise<{ hash: string
   return { hash: res.hash };
 }
 
+const SIM_SOURCE_CACHE = "gallery:sim-source-secret";
+
+/**
+ * A funded classic account usable as a READ-ONLY simulation source when the
+ * caller's own account does not exist on-chain yet (fresh embedded wallets
+ * before friendbot). Browser-only fallback: a throwaway keypair, friendbot-
+ * funded once, cached in localStorage — it never signs anything user-facing.
+ */
+export async function getSimulationAccount(server: rpc.Server, preferred: string) {
+  if (preferred.startsWith("G")) {
+    try {
+      return await server.getAccount(preferred);
+    } catch {
+      /* unfunded — fall through to the shared sim source */
+    }
+  }
+  if (typeof localStorage === "undefined") {
+    throw new Error(`Account not found: ${preferred}`);
+  }
+  const cached = localStorage.getItem(SIM_SOURCE_CACHE);
+  const kp = cached ? Keypair.fromSecret(cached) : Keypair.random();
+  if (!cached) localStorage.setItem(SIM_SOURCE_CACHE, kp.secret());
+  try {
+    return await server.getAccount(kp.publicKey());
+  } catch {
+    await fundWithFriendbot(kp.publicKey());
+    return await server.getAccount(kp.publicKey());
+  }
+}
+
 /**
  * Balance of a Soroban token (SEP-41 `balance(id)`) for any holder, read via
  * RPC simulation — covers pure Soroban tokens that never appear in Horizon
@@ -97,10 +128,7 @@ export async function getTokenBalance(
 ): Promise<string | null> {
   try {
     const server = new rpc.Server(RPC_URL);
-    const source = holder.startsWith("G")
-      ? holder
-      : "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
-    const account = await server.getAccount(source);
+    const account = await getSimulationAccount(server, holder);
     const tx = new TransactionBuilder(account, {
       fee: BASE_FEE,
       networkPassphrase: NETWORK_PASSPHRASE,

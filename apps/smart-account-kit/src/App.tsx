@@ -213,7 +213,10 @@ export default function App() {
           <StatusNote>
             Creates a WebAuthn passkey and deploys an OpenZeppelin smart-account
             contract (C-address) it controls. Deployment fees are sponsored by the
-            testnet relayer proxy, so no funded account is needed.
+            testnet relayer proxy, so no funded account is needed. Heads-up:
+            "Connect existing" only finds smart accounts created on THIS tab — a
+            passkey made on the Passkey Kit tab controls a different contract
+            system, even though the browser shows it in the same passkey picker.
           </StatusNote>
         </Card>
       )}
