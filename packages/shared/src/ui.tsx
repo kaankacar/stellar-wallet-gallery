@@ -156,6 +156,7 @@ export function AccountCard(props: {
   onRefresh: () => void;
   onFund?: () => void;
   funding?: boolean;
+  onDisconnect?: () => void;
   note?: string;
 }) {
   return (
@@ -180,6 +181,11 @@ export function AccountCard(props: {
         {props.onFund && (
           <Button onClick={props.onFund} disabled={props.funding}>
             {props.funding ? "Funding…" : "Fund with friendbot"}
+          </Button>
+        )}
+        {props.onDisconnect && (
+          <Button variant="ghost" onClick={props.onDisconnect}>
+            Disconnect
           </Button>
         )}
       </div>

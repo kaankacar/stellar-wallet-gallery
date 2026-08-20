@@ -149,6 +149,7 @@ function Wallet(props: { address: string }) {
         address={address}
         balance={balance}
         onRefresh={() => void refresh()}
+        onDisconnect={() => blux.logout()}
         note={fundError ? `Balance: ${fundError}` : "Classic account behind whichever door you logged in through."}
       />
       <FriendbotCard address={address} onFunded={() => void refresh()} />
@@ -171,11 +172,6 @@ function Wallet(props: { address: string }) {
         onSwapped={() => void refresh()}
         note="Blux routes the Soroban swap to whichever door you logged in through."
       />
-      <div className="row">
-        <Button variant="ghost" onClick={() => blux.logout()}>
-          Disconnect
-        </Button>
-      </div>
     </>
   );
 }

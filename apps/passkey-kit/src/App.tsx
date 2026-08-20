@@ -223,6 +223,7 @@ export default function App() {
             address={address}
             balance={balance}
             onRefresh={() => void refreshBalance(address)}
+            onDisconnect={disconnect}
             note="Contract wallet controlled by your passkey — the balance lives in the native asset contract, not a classic account."
           />
           {accountError && <p className="error">{accountError}</p>}
@@ -237,9 +238,6 @@ export default function App() {
           />
           <SwapCard address={address} />
           <div className="row">
-            <Button variant="ghost" onClick={disconnect}>
-              Disconnect
-            </Button>
             <Button variant="ghost" onClick={() => void forgetStored()}>
               Forget stored passkeys
             </Button>

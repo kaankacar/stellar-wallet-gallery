@@ -154,6 +154,7 @@ export default function App() {
             address={address}
             balance={balance}
             onRefresh={() => void refreshBalance(address)}
+            onDisconnect={() => void disconnect()}
             note="Your wallet's classic account — the extension holds the ed25519 key."
           />
           {accountError && <p className="error">{accountError}</p>}
@@ -170,11 +171,6 @@ export default function App() {
             onSwapped={() => refreshBalance(address)}
             note="Use a Soroban-capable wallet (Freighter, xBull) — some wallets can't sign contract transactions yet."
           />
-          <div className="row">
-            <Button variant="ghost" onClick={() => void disconnect()}>
-              Disconnect
-            </Button>
-          </div>
         </>
       )}
       <SigningExplainer {...signingExplainer} />

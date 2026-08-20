@@ -227,6 +227,7 @@ export default function App() {
             address={session.contractId}
             balance={balance}
             onRefresh={() => void refreshBalance(session.contractId)}
+            onDisconnect={() => void disconnect()}
             note="OpenZeppelin smart account controlled by your passkey — policies and extra signers can be added on-chain."
           />
           <FriendbotCard
@@ -240,11 +241,6 @@ export default function App() {
             error={error}
           />
           <SwapCard address={session.contractId} />
-          <div className="row">
-            <Button variant="ghost" onClick={() => void disconnect()}>
-              Disconnect
-            </Button>
-          </div>
         </>
       )}
       <SigningExplainer {...signingExplainer} />
