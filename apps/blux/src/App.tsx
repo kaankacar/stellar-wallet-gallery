@@ -50,6 +50,11 @@ export function Root() {
         isPersistent: true,
         // Blux defaults to wallet-only; opt in to the non-crypto doors too.
         loginMethods: ["wallet", "email", "sms", "google", "passkey"],
+        // Blux's built-in signing/approval overlay renders clipped, locks page
+        // scroll, and never resolves on Soroban transactions (observed live
+        // 2026-08-20 — upstream bug). Sign headlessly instead; extension
+        // wallets still show their own approval prompt.
+        showWalletUIs: false,
         appearance: { accentColor: ACCENT },
       }}
     >
@@ -170,7 +175,7 @@ function Wallet(props: { address: string }) {
           return signed;
         }}
         onSwapped={() => void refresh()}
-        note="Blux routes the Soroban swap to whichever door you logged in through."
+        note="Blux routes the Soroban swap to whichever door you logged in through. Blux's own approval overlay is disabled here (rendering bug — worth reporting to the Blux team); extension wallets still show their own prompt."
       />
     </>
   );
