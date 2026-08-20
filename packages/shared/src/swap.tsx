@@ -24,7 +24,10 @@ import {
  * (api.soroswap.finance/api/testnet/router); token contracts from the public
  * /api/tokens list (2026-08-20). Testnet USDC is a PURE Soroban token
  * (name() = "USDCoin", verified via RPC) — not a classic-asset SAC — so
- * G-accounts receive it without a trustline. The XLM/USDC pair was seeded
+ * G-accounts receive it without a trustline. It is Soroswap's faucet-minted
+ * test token, NOT Circle's USDC (Circle's testnet USDC is the classic asset
+ * USDC:GBBD47IF…FLA5, SAC CBIELTK6…DAMA) — hence the "tUSDC" label in the UI.
+ * The XLM/USDC pair was seeded
  * with liquidity for this gallery (5,000 XLM + 2,000 USDC, 2026-08-20).
  * Quarterly testnet resets wipe all of this; re-seed with
  * packages/shared/scripts/seed-pool-direct.mts.
@@ -177,9 +180,10 @@ export function SwapCard(props: {
   return (
     <Card title="Swap on Soroswap (testnet)">
       <p className="muted small">
-        XLM → USDC against the Soroswap AMM router: quote via simulation →
+        XLM → tUSDC against the Soroswap AMM router: quote via simulation →
         build the swap invocation → <strong>sign with this kit</strong> →
-        submit.
+        submit. tUSDC is Soroswap's faucet-minted test token, not Circle's
+        USDC.
         {props.note ? ` ${props.note}` : ""}
       </p>
       <Field
@@ -205,11 +209,11 @@ export function SwapCard(props: {
       </div>
       {quote && (
         <p className="muted small">
-          Quote: {amount} XLM → ≈ {(Number(quote.out) / 1e7).toFixed(4)} USDC ·
+          Quote: {amount} XLM → ≈ {(Number(quote.out) / 1e7).toFixed(4)} tUSDC ·
           Soroswap AMM · 1% max slippage
         </p>
       )}
-      <p className="muted small">USDC balance: {usdc ?? "0"}</p>
+      <p className="muted small">tUSDC balance: {usdc ?? "0"}</p>
       {hash && (
         <p className="success">
           Swapped!{" "}

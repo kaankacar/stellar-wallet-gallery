@@ -61,10 +61,15 @@ throwaway friendbot-funded fee source instead — still zero credentials.
 ## Swapping (Soroswap)
 
 Every G-account app has a **Swap on Soroswap (testnet)** card after login:
-XLM → USDC against the Soroswap AMM router, fully client-side — quote by
+XLM → tUSDC against the Soroswap AMM router, fully client-side — quote by
 simulating `router_get_amounts_out`, build `swap_exact_tokens_for_tokens`,
 sign with that page's wallet kit, submit. **No API key needed.** The two
 contract-wallet apps explain why a C-address can't be the classic tx source.
+
+**tUSDC is Soroswap's faucet-minted test token, not Circle's USDC.** Circle's
+real testnet USDC on Stellar is the classic asset `USDC:GBBD47IF…FLA5`
+(SAC `CBIELTK6…DAMA`) — a different contract entirely, and one that would
+require a trustline before receiving.
 
 Testnet resets wipe the pool; re-seed it with
 `SOROSWAP_API_KEY=sk_… pnpm dlx tsx scripts/seed-pool-direct.mts` from
