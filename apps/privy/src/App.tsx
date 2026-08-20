@@ -1,5 +1,5 @@
 import { PrivyProvider } from "@privy-io/react-auth";
-import { DemoShell, NeedsKeyBanner, SigningExplainer } from "@gallery/shared";
+import { Card, DemoShell, NeedsKeyBanner, SigningExplainer } from "@gallery/shared";
 import { WalletDemo } from "./WalletDemo";
 import { signingExplainer } from "./explainer-content";
 
@@ -29,6 +29,30 @@ export function App() {
           docsUrl="https://dashboard.privy.io"
         />
       )}
+      <Card title="Privy's chain tiers — where Stellar sits">
+        <p className="muted small">
+          Privy supports chains at three levels (docs.privy.io → chains):
+        </p>
+        <p className="muted small">
+          <strong>Tier 3 — full functionality.</strong> End-to-end client
+          support: transaction building and submission, native gas sponsorship,
+          policies and webhooks. Ethereum (+ EVM chains), Solana (+ SVM),
+          Tempo.
+        </p>
+        <p className="muted small">
+          <strong>Tier 2 — wallet abstractions. Stellar lives here</strong>{" "}
+          (with Bitcoin, Cosmos, Sui, TON, Near, …): wallet creation, chain
+          address derivation, key export, and curve-level signatures for
+          transaction signing — but no Stellar-aware transaction building.
+          That's why this page builds the XDR itself, hashes it, and hands
+          Privy exactly 32 bytes to sign.
+        </p>
+        <p className="muted small">
+          <strong>Tier 1 — cryptographic signing.</strong> Raw signatures and
+          basic key management only — Bitcoin L2s and other ed25519/secp256k1
+          chains.
+        </p>
+      </Card>
       <SigningExplainer {...signingExplainer} />
     </DemoShell>
   );
