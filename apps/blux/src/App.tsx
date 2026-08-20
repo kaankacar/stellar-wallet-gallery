@@ -1,0 +1,178 @@
+import { useCallback, useEffect, useState } from "react";
+import { BluxProvider, networks, useBlux } from "@bluxcc/react";
+import {
+  AccountCard,
+  Button,
+  Card,
+  DemoShell,
+  NeedsKeyBanner,
+  PaymentCard,
+  StatusNote,
+  NETWORK_PASSPHRASE,
+  buildPaymentXdr,
+  errorMessage,
+  fundWithFriendbot,
+  getXlmBalance,
+  submitSignedXdr,
+} from "@gallery/shared";
+
+const ACCENT = "#ffd84d";
+const TAGLINE =
+  "Blux is an SCF-funded connect kit for Stellar dApps that onboards users through wallets, email, phone and social login (blux.cc).";
+const DASHBOARD_URL = "https://dashboard.blux.cc";
+
+const APP_ID = (import.meta.env.VITE_BLUX_APP_ID as string | undefined)?.trim();
+
+export function Root() {
+  if (!APP_ID) {
+    return (
+      <DemoShell kit="Blux" tagline={TAGLINE} accent={ACCENT}>
+        <NeedsKeyBanner kit="Blux" vars={["VITE_BLUX_APP_ID"]} docsUrl={DASHBOARD_URL} />
+        <StatusNote>
+          Blux validates the app id against its API before allowing login or signing, so the
+          provider is not mounted until <code>VITE_BLUX_APP_ID</code> is set.
+        </StatusNote>
+      </DemoShell>
+    );
+  }
+  return (
+    <BluxProvider
+      config={{
+        appId: APP_ID,
+        appName: "Stellar Wallet Gallery",
+        networks: [networks.testnet],
+        defaultNetwork: networks.testnet,
+        explorer: "stellarexpert",
+        isPersistent: true,
+        appearance: { accentColor: ACCENT },
+      }}
+    >
+      <DemoShell kit="Blux" tagline={TAGLINE} accent={ACCENT}>
+        <Flow />
+      </DemoShell>
+    </BluxProvider>
+  );
+}
+
+function Flow() {
+  const blux = useBlux();
+  const address = blux.user?.address;
+  if (!blux.isAuthenticated || !address) return <ConnectCard />;
+  return <Wallet key={address} address={address} />;
+}
+
+function ConnectCard() {
+  const blux = useBlux();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const connect = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await blux.login(); // opens the Blux modal, resolves with the authenticated user
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card title="Connect">
+      <StatusNote>
+        Log in through the Blux modal — a Stellar wallet (Freighter, xBull, Lobstr, Albedo, …) or
+        any non-crypto method enabled for this app id in the Blux dashboard.
+      </StatusNote>
+      <div className="row">
+        <Button onClick={() => void connect()} disabled={busy || !blux.isReady}>
+          {busy ? "Waiting for Blux…" : blux.isReady ? "Connect with Blux" : "Loading Blux…"}
+        </Button>
+      </div>
+      {error && <p className="error">{error}</p>}
+    </Card>
+  );
+}
+
+function Wallet(props: { address: string }) {
+  const { address } = props;
+  const blux = useBlux();
+
+  const [balance, setBalance] = useState<string | null>(null);
+  const [funding, setFunding] = useState(false);
+  const [fundError, setFundError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [hash, setHash] = useState<string | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      setBalance(await getXlmBalance(address));
+    } catch (e) {
+      setFundError(errorMessage(e));
+    }
+  }, [address]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const fund = async () => {
+    setFunding(true);
+    setFundError(null);
+    try {
+      await fundWithFriendbot(address);
+      await refresh();
+    } catch (e) {
+      setFundError(errorMessage(e));
+    } finally {
+      setFunding(false);
+    }
+  };
+
+  const send = async (destination: string, amount: string) => {
+    setBusy(true);
+    setPayError(null);
+    setHash(null);
+    try {
+      const xdr = await buildPaymentXdr({ source: address, destination, amount });
+      const signed = await blux.signTransaction(xdr, { network: NETWORK_PASSPHRASE });
+      if (typeof signed !== "string") {
+        throw new Error(`Blux signTransaction returned an unexpected ${typeof signed}`);
+      }
+      const result = await submitSignedXdr(signed);
+      setHash(result.hash);
+      await refresh();
+    } catch (e) {
+      setPayError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <AccountCard
+        address={address}
+        balance={balance}
+        onRefresh={() => void refresh()}
+        onFund={() => void fund()}
+        funding={funding}
+        note={fundError ? `Friendbot: ${fundError}` : undefined}
+      />
+      <PaymentCard
+        onSend={(destination, amount) => void send(destination, amount)}
+        busy={busy}
+        hash={hash}
+        error={payError}
+        disabled={balance === null}
+        note="XDR built by @gallery/shared, signed by Blux (signTransaction), submitted to Horizon via submitSignedXdr."
+      />
+      <div className="row">
+        <Button variant="ghost" onClick={() => blux.logout()}>
+          Disconnect
+        </Button>
+      </div>
+    </>
+  );
+}

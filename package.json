@@ -1,0 +1,17 @@
+{
+  "name": "stellar-wallet-gallery",
+  "private": true,
+  "packageManager": "pnpm@10.33.4",
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  },
+  "scripts": {
+    "build": "pnpm -r --workspace-concurrency=1 build",
+    "dev:swk": "pnpm --filter app-stellar-wallets-kit dev",
+    "dev:blux": "pnpm --filter app-blux dev",
+    "dev:privy": "pnpm --filter app-privy dev",
+    "dev:para": "pnpm --filter app-para dev",
+    "dev:passkey": "pnpm --filter app-passkey-kit dev",
+    "dev:smart-account": "pnpm --filter app-smart-account-kit dev"
+  }
+}
