@@ -11,6 +11,7 @@ import {
   SigningExplainer,
   StatusNote,
   SwapCard,
+  WalletAnatomy,
   NETWORK_PASSPHRASE,
   buildPaymentXdr,
   errorMessage,
@@ -59,6 +60,13 @@ export function Root() {
       }}
     >
       <DemoShell kit="Blux" tagline={TAGLINE} accent={ACCENT} accountKind="G">
+        <WalletAnatomy
+          account="Classic G account — an ed25519 keypair on the ledger"
+          keyLivesIn="Behind whichever door you pick: your wallet extension, or a Blux-managed key for email / SMS / Google / passkey sessions"
+          signature="ed25519 — Blux routes the signing request to the authenticated method"
+          verifiedBy="The protocol — native signature check"
+          fees="You pay, in XLM from the account"
+        />
         <Flow />
         <SigningExplainer {...signingExplainer} />
       </DemoShell>

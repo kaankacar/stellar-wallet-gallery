@@ -11,6 +11,7 @@ import {
   SigningExplainer,
   StatusNote,
   SwapCard,
+  WalletAnatomy,
   errorMessage,
   getXlmBalance,
 } from "@gallery/shared";
@@ -183,6 +184,13 @@ export default function App() {
 
   return (
     <DemoShell kit="Smart Account Kit" tagline={TAGLINE} accent={ACCENT} accountKind="C">
+      <WalletAnatomy
+        account="OpenZeppelin smart account — a contract at a C-address, with on-chain signer & policy management"
+        keyLivesIn="A secp256r1 passkey in your device's secure enclave; Ed25519 and delegated signers can be added on-chain"
+        signature="WebAuthn assertion over the auth entry"
+        verifiedBy="A shared WebAuthn verifier contract + the account's authorization policies, on-chain"
+        fees="Fully sponsored — SDF's testnet relayer proxy (OpenZeppelin Relayer) pays for deploys and transfers"
+      />
       {MISSING_VARS.length > 0 && (
         <NeedsKeyBanner kit="Smart Account Kit" vars={MISSING_VARS} docsUrl={DOCS_URL} />
       )}

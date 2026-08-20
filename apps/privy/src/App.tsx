@@ -1,5 +1,5 @@
 import { PrivyProvider } from "@privy-io/react-auth";
-import { Card, DemoShell, NeedsKeyBanner, SigningExplainer } from "@gallery/shared";
+import { Card, DemoShell, NeedsKeyBanner, SigningExplainer, WalletAnatomy } from "@gallery/shared";
 import { WalletDemo } from "./WalletDemo";
 import { signingExplainer } from "./explainer-content";
 
@@ -14,6 +14,13 @@ export function App() {
       accent="#6c5ce7"
       accountKind="G"
     >
+      <WalletAnatomy
+        account="Classic G account, derived from an embedded ed25519 key"
+        keyLivesIn="Privy's TEE-backed key infrastructure (Stellar is a tier-2 'extended chain'); exportable by the user"
+        signature="ed25519 — the dApp builds the XDR and hashes it; Privy signs exactly those 32 bytes (signRawHash)"
+        verifiedBy="The protocol — native signature check"
+        fees="You pay, in XLM from the account"
+      />
       {APP_ID ? (
         <PrivyProvider
           appId={APP_ID}

@@ -237,6 +237,39 @@ export function PaymentCard(props: {
 }
 
 /**
+ * Fixed-format wallet-structure summary — the same five rows on every app so
+ * the tabs compare like-for-like: Account / Key lives in / Signature /
+ * Verified by / Fees.
+ */
+export function WalletAnatomy(props: {
+  account: string;
+  keyLivesIn: string;
+  signature: string;
+  verifiedBy: string;
+  fees: string;
+}) {
+  const rows: Array<[string, string]> = [
+    ["Account", props.account],
+    ["Key lives in", props.keyLivesIn],
+    ["Signature", props.signature],
+    ["Verified by", props.verifiedBy],
+    ["Fees", props.fees],
+  ];
+  return (
+    <Card title="Wallet anatomy">
+      <dl className="anatomy">
+        {rows.map(([label, value]) => (
+          <div key={label} className="anatomy-row">
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </Card>
+  );
+}
+
+/**
  * Dedicated friendbot funding section, shown once a wallet is connected.
  * Self-contained: does the friendbot call itself and reports success/failure;
  * `onFunded` lets the host app refresh its balance display.

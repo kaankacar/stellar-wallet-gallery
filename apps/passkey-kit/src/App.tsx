@@ -10,6 +10,7 @@ import {
   SigningExplainer,
   StatusNote,
   SwapCard,
+  WalletAnatomy,
   errorMessage,
   getXlmBalance,
 } from "@gallery/shared";
@@ -177,6 +178,13 @@ export default function App() {
       accent="#29d3a2"
       accountKind="C"
     >
+      <WalletAnatomy
+        account="Soroban smart wallet — a contract at a C-address; balances live in token contracts"
+        keyLivesIn="A secp256r1 passkey in your device's secure enclave — non-exportable, unlocked by Touch ID / Face ID"
+        signature="WebAuthn assertion over the auth entry (Protocol 27 address-bound credentials)"
+        verifiedBy="The wallet contract's own __check_auth, on-chain — the chain verifies WebAuthn"
+        fees="Deploy is sponsored (OZ Channels); transfers & swaps ride a throwaway fee source until the relayer speaks P27"
+      />
       {!address ? (
         <Card title="Connect">
           <p>

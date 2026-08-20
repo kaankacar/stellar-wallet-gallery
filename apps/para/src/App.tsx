@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Environment, ParaProvider } from "@getpara/react-sdk";
-import { Card, DemoShell, NeedsKeyBanner, SigningExplainer, StatusNote } from "@gallery/shared";
+import { Card, DemoShell, NeedsKeyBanner, SigningExplainer, StatusNote, WalletAnatomy } from "@gallery/shared";
 import { WalletDemo } from "./WalletDemo";
 import { signingExplainer } from "./explainer-content";
 
@@ -30,6 +30,13 @@ export function App() {
       accent="#ff7b54"
       accountKind="G"
     >
+      <WalletAnatomy
+        account="Classic G account, derived from an MPC-held ed25519 key"
+        keyLivesIn="Two key shares — one with your session, one in Para's network; the full key never exists anywhere"
+        signature="ed25519, computed jointly by the shares in an MPC ceremony (signTransactionXDR)"
+        verifiedBy="The protocol — native signature check"
+        fees="You pay, in XLM from the account"
+      />
       {API_KEY ? (
         <QueryClientProvider client={queryClient}>
           <ParaProvider

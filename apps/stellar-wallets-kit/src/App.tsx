@@ -10,6 +10,7 @@ import {
   SigningExplainer,
   StatusNote,
   SwapCard,
+  WalletAnatomy,
   buildPaymentXdr,
   errorMessage,
   getXlmBalance,
@@ -133,6 +134,13 @@ export default function App() {
       accent="#4f8ff7"
       accountKind="G"
     >
+      <WalletAnatomy
+        account="Classic G account — an ed25519 keypair on the ledger"
+        keyLivesIn="Your own wallet (Freighter, xBull, Ledger, …) — the key never leaves it"
+        signature="ed25519 over the transaction hash, made in the wallet's approval popup"
+        verifiedBy="The protocol itself — native signature check, no contracts involved"
+        fees="You pay, in XLM from the account"
+      />
       {!address ? (
         <Card title="Connect">
           <p>
