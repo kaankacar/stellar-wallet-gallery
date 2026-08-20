@@ -6,6 +6,7 @@ import {
   DemoShell,
   NETWORK_PASSPHRASE,
   PaymentCard,
+  SigningExplainer,
   StatusNote,
   buildPaymentXdr,
   errorMessage,
@@ -14,6 +15,7 @@ import {
   submitSignedXdr,
 } from "@gallery/shared";
 import { KitEventType, StellarWalletsKit } from "./kit";
+import { signingExplainer } from "./explainer-content";
 
 export default function App() {
   const [address, setAddress] = useState<string | null>(null);
@@ -162,6 +164,7 @@ export default function App() {
           </div>
         </>
       )}
+      <SigningExplainer {...signingExplainer} />
     </DemoShell>
   );
 }

@@ -7,6 +7,7 @@ import {
   Field,
   NeedsKeyBanner,
   PaymentCard,
+  SigningExplainer,
   StatusNote,
   errorMessage,
   fundWithFriendbot,
@@ -15,6 +16,7 @@ import {
 import { LocalStorageAdapter, SmartAccountKit } from "smart-account-kit";
 import type { IndexedContractSummary } from "smart-account-kit";
 import { CONFIG, DOCS_URL, MISSING_VARS } from "./config";
+import { signingExplainer } from "./explainer-content";
 
 const ACCENT = "#63b3ed";
 const TAGLINE =
@@ -258,6 +260,7 @@ export default function App() {
           </div>
         </>
       )}
+      <SigningExplainer {...signingExplainer} />
     </DemoShell>
   );
 }

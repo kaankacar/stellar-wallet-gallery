@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Environment, ParaProvider } from "@getpara/react-sdk";
-import { Card, DemoShell, NeedsKeyBanner, StatusNote } from "@gallery/shared";
+import { Card, DemoShell, NeedsKeyBanner, SigningExplainer, StatusNote } from "@gallery/shared";
 import { WalletDemo } from "./WalletDemo";
+import { signingExplainer } from "./explainer-content";
 
 const API_KEY = (import.meta.env.VITE_PARA_API_KEY as string | undefined) ?? "";
 
@@ -49,6 +50,7 @@ export function App() {
           docsUrl="https://developer.getpara.com"
         />
       )}
+      <SigningExplainer {...signingExplainer} />
     </DemoShell>
   );
 }

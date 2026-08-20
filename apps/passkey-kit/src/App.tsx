@@ -6,6 +6,7 @@ import {
   DemoShell,
   Field,
   PaymentCard,
+  SigningExplainer,
   StatusNote,
   errorMessage,
   fundWithFriendbot,
@@ -14,6 +15,7 @@ import {
 import { PasskeySigner, SignerKey, type StoredPasskey } from "passkey-kit";
 import { indexer, kit, nativeToken, storage } from "./config";
 import { submit } from "./relayer";
+import { signingExplainer } from "./explainer-content";
 
 /** Parse a decimal-XLM input into i128 stroops for the SAC transfer. */
 function xlmToStroops(amount: string): bigint {
@@ -257,6 +259,7 @@ export default function App() {
           </div>
         </>
       )}
+      <SigningExplainer {...signingExplainer} />
     </DemoShell>
   );
 }

@@ -1,6 +1,7 @@
 import { PrivyProvider } from "@privy-io/react-auth";
-import { DemoShell, NeedsKeyBanner } from "@gallery/shared";
+import { DemoShell, NeedsKeyBanner, SigningExplainer } from "@gallery/shared";
 import { WalletDemo } from "./WalletDemo";
+import { signingExplainer } from "./explainer-content";
 
 const APP_ID = (import.meta.env.VITE_PRIVY_APP_ID as string | undefined) ?? "";
 const CLIENT_ID = (import.meta.env.VITE_PRIVY_CLIENT_ID as string | undefined) ?? "";
@@ -27,6 +28,7 @@ export function App() {
           docsUrl="https://dashboard.privy.io"
         />
       )}
+      <SigningExplainer {...signingExplainer} />
     </DemoShell>
   );
 }

@@ -7,6 +7,7 @@ import {
   DemoShell,
   NeedsKeyBanner,
   PaymentCard,
+  SigningExplainer,
   StatusNote,
   NETWORK_PASSPHRASE,
   buildPaymentXdr,
@@ -15,6 +16,7 @@ import {
   getXlmBalance,
   submitSignedXdr,
 } from "@gallery/shared";
+import { signingExplainer } from "./explainer-content";
 
 const ACCENT = "#ffd84d";
 const TAGLINE =
@@ -32,6 +34,7 @@ export function Root() {
           Blux validates the app id against its API before allowing login or signing, so the
           provider is not mounted until <code>VITE_BLUX_APP_ID</code> is set.
         </StatusNote>
+        <SigningExplainer {...signingExplainer} />
       </DemoShell>
     );
   }
@@ -49,6 +52,7 @@ export function Root() {
     >
       <DemoShell kit="Blux" tagline={TAGLINE} accent={ACCENT}>
         <Flow />
+        <SigningExplainer {...signingExplainer} />
       </DemoShell>
     </BluxProvider>
   );

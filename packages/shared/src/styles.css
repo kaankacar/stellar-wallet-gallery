@@ -220,3 +220,160 @@ body {
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+/* ---- Signing explainer ---- */
+
+.explainer {
+  width: min(1080px, calc(100vw - 2rem));
+  margin-left: 50%;
+  transform: translateX(-50%);
+  border-top: 1px solid #23242e;
+  padding-top: 1.25rem;
+}
+
+.explainer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 940px) {
+  .explainer-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.setup {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.setup li::marker {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.setup-title {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.setup .code {
+  margin: 0.4rem 0 0;
+  background: #0d0e14;
+  border: 1px solid #2b2d3a;
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  overflow-x: auto;
+}
+
+.flow {
+  width: 100%;
+  height: auto;
+  display: block;
+  user-select: none;
+}
+
+.flow .lifeline {
+  stroke: #23242e;
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.flow .actor-icon {
+  font-size: 17px;
+}
+
+.flow .actor-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  fill: #9a9db1;
+}
+
+.flow .edge {
+  stroke-width: 1.6;
+}
+
+.flow .step.dim .edge {
+  stroke: #3a3d4d;
+}
+
+.flow .step.dim .edge-label {
+  fill: #6a6d80;
+}
+
+.flow .step.dim .edge-dot {
+  fill: #3a3d4d;
+}
+
+.flow .step.done .edge {
+  stroke: #7b7f93;
+}
+
+.flow .step.done .edge-label {
+  fill: #9a9db1;
+}
+
+.flow .step.done .edge-dot {
+  fill: #7b7f93;
+}
+
+.flow .step.active .edge {
+  stroke: var(--accent);
+  stroke-width: 2.6;
+  stroke-dasharray: 7 5;
+  animation: flow-march 0.7s linear infinite;
+}
+
+.flow .step.active .edge-label {
+  fill: #e8e9f0;
+  font-weight: 700;
+}
+
+.flow .step.active .edge-dot {
+  fill: var(--accent);
+}
+
+.flow .edge-label {
+  font-size: 10.5px;
+}
+
+.flow .ah-dim {
+  fill: #3a3d4d;
+}
+
+.flow .ah-done {
+  fill: #7b7f93;
+}
+
+.flow .ah-active {
+  fill: var(--accent);
+}
+
+@keyframes flow-march {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+.flow-caption {
+  min-height: 4.4em;
+  background: #0d0e14;
+  border: 1px solid #2b2d3a;
+  border-radius: 8px;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: #c9cbd8;
+  margin: 0.5rem 0;
+}
+
+.flow-caption strong {
+  color: var(--accent);
+}
